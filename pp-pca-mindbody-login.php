@@ -24,6 +24,14 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+/**
+ * This class describes a user of the MINDBODY system.
+ * A user consists of the user's ID (clientId) as well
+ * as the globally unique session ID obtained from the MINDBODY
+ * API when validating the user's username and password.  In addition,
+ * we store the list of classes that the user is currently enrolled in
+ * so that we can use that list to show specific content based on the user.
+ */
 class PPPCAMindBodyUserData {
     var $mbGUID;
     var $clientId;
@@ -34,13 +42,25 @@ class PPPCAMindBodyUserData {
         $this->clientId = $clientId;
         $this->classList = $classList;
     }
-
+    /**
+     * The client ID is the ID within the MINDBODY system
+     * for this user.
+     */
     public function getClientId() {
         return $this->clientId;
     }
+    /**
+     * The GUID is a globally unique session ID
+     * given to a user when they validate the username
+     * and password upon logging in.
+     */
     public function getGUID() {
         return $this->GUID;
     }
+    /**
+     * The class list is the list of classes that the user
+     * is currently enrolled in.
+     */
     public function getClassList() {
         return $this->classList;
     }
@@ -53,12 +73,39 @@ class PPPCAMindbodyPlugin {
         $this->option = get_option("pp_pca_options");
     }
     public function init() {
+        // This shortcode simply indicates that the user must have
+        // a valid MINDBODY account in order to see any content on a page
+        // which contains this shortcode.
         add_shortcode('pp-pca-mindbody-login', array($this, 'shortcodeLogin'));
+
+        // This shortcode expands to show the list of classes that this user
+        // is enrolled in.  This assumes that the classes have the 'tag' attribute
+        // of 'class-{classId}' where classId is the ID of the class in the
+        // MINDBODY system.
         add_shortcode('pp-pca-mindbody-class-list', array($this, 'shortcodeClassList'));
+
+        // This shortcode allows you to have specific content which is only visible
+        // when a particular class has been enrolled.  This shortcode requires that
+        // the 'id' attribute of the class being protected is specified.
+        // For example, the content to protect might look like this:
+        //     [pp-pca-mindbody-class id=classId]Content To Protect[/pp-pca-mindbody-class]
         add_shortcode('pp-pca-mindbody-class', array($this, 'shortcodeClass'));
+
+        // In order to handle the login correctly, this override allows us to change
+        // the template used to render the page based on whether the user has logged in or
+        // not.
         add_action( 'template_include', array($this, 'template_include'));
+
+        // This shortcode allows you to hide and show certain videos based on
+        // buttons in the HTML code.
 	add_shortcode('hide_panes', array($this, 'hidePanes'));
     }
+    /**
+     * This function expands to some JavaScript
+     * code to facilitate hiding and showing content
+     * based on selection buttons.  This allows pages to be more
+     * easily used and fit within the PCA website.
+     */
     public function hidePanes() {
 		$sc = "<script type='text/javascript'>" .
 			// "<!--" .
@@ -282,7 +329,13 @@ class PPPCAMindbodyPlugin {
 }
 $ppPCAMindbodyPlugin = new PPPCAMindbodyPlugin();
 
-
+/**
+ * This class handles the 'Options' menu
+ * for the plugin.  The main purpose of the 'Options'
+ * menu is to allow a place for administrators to change
+ * and maintain the various username/password credentials
+ * required in order to use the MINDBODY API.
+ */
 class PPPCAMindbodySettings
 {
     /**
