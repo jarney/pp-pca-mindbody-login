@@ -27,10 +27,12 @@
 class PPPCAMindBodyUserData {
     var $mbGUID;
     var $clientId;
+    var $classList;
 
-    public function __construct($GUID, $clientId) {
+    public function __construct($GUID, $clientId, $classList) {
         $this->mbGUID = $GUID;
         $this->clientId = $clientId;
+        $this->classList = $classList;
     }
 
     public function getClientId() {
@@ -38,6 +40,9 @@ class PPPCAMindBodyUserData {
     }
     public function getGUID() {
         return $this->GUID;
+    }
+    public function getClassList() {
+        return $this->classList;
     }
 }
 
@@ -136,8 +141,38 @@ class PPPCAMindbodyPlugin {
                     $result = $clientService->ValidateLogin(
                                     $form_mindbody_username,
                                     $form_mindbody_password);
-                    $mb_result = ob_get_contents();
 
+                    $classService = $this->getClassService();
+
+                    $classDescriptionIDs = array();
+                    $classIDs = array();
+                    $staffIDs = array();
+
+                    $startDate = new DateTime();
+                    $startDate->modify("-90 days");
+
+                    // Next 12 months.
+                    $endDate = new DateTime();
+                    $endDate->modify("+120 days");
+
+                    $classService = $this->getClassService();
+                    $getClassesResponse = $classService->GetClasses(
+                        $classDescriptionIDs,
+                        $classIDs,
+                        $staffIDs,
+                        $startDate,
+                        $endDate,
+                        $result->ValidateLoginResult->Client->ID
+                    );
+
+                    $classList = array();
+                    foreach ($getClassesResponse->GetClassesResult->Classes->Class as $myClass) {
+                        if ($myClass->IsEnrolled == 1) {
+                            array_push($classList, $myClass);
+                        }
+                    }
+
+                    $mb_result = ob_get_contents();
 
                     ob_end_clean();
 
@@ -152,7 +187,8 @@ class PPPCAMindbodyPlugin {
                     else {
                         $sessionData = new PPPCAMindBodyUserData(
                             $result->ValidateLoginResult->GUID,
-                            $result->ValidateLoginResult->Client->ID
+                            $result->ValidateLoginResult->Client->ID,
+                            $classList
                         );
                         $_SESSION["pp-pca-mindbody-login"] = serialize($sessionData);
                     }
@@ -181,6 +217,9 @@ class PPPCAMindbodyPlugin {
         return $logoutLink;
     }
 
+    public function getClassList() {
+    }
+
 
     ///
     // Adds all of the posts for 
@@ -189,50 +228,25 @@ class PPPCAMindbodyPlugin {
     function shortcodeClassList($attrs) {
 
         $sessionData = unserialize($_SESSION["pp-pca-mindbody-login"]);
-        $clientService = $this->getClassService();
 
-        $classDescriptionIDs = array();
-        $classIDs = array();
-        $staffIDs = array();
-
-        $startDate = new DateTime();
-        $startDate->modify("-90 days");
-
-        // Next 12 months.
-        $endDate = new DateTime();
-        $endDate->modify("+120 days");
-
-        $response = $clientService->GetClasses(
-            $classDescriptionIDs,
-            $classIDs,
-            $staffIDs,
-            $startDate,
-            $endDate,
-            $sessionData->getClientId()
-        );
-
-        $tag = array();
 	$tagstring = "";
         $i = 0;
-        foreach ($response->GetClassesResult->Classes->Class as $myClass) {
-            if ($myClass->IsEnrolled == 1) {
-                array_push($tag, $myClass->ClassScheduleID);
-                $content = 
-                    "[ic_add_posts tag='class-" . $myClass->ClassScheduleID . "']";
-                if( is_admin() ) {
-                    $content = "Class " .
-                        $myClass->ClassScheduleID . ":" . 
-                        $myClass->ClassDescription->Name . ":" .
-                        $content;
-                }
-                if ($i == 0) {
-                    $tagstring = $content;
-                }
-                else {
-                    $tagstring = $tagstring . "<br/>" . $content;
-                }
-                $i++;
+        foreach ($sessionData->getClassList() as $myClass) {
+            $content = 
+                "[ic_add_posts tag='class-" . $myClass->ClassScheduleID . "']";
+            if( is_admin() ) {
+                $content = "Class " .
+                    $myClass->ClassScheduleID . ":" . 
+                    $myClass->ClassDescription->Name . ":" .
+                    $content;
             }
+            if ($i == 0) {
+                $tagstring = $content;
+            }
+            else {
+                $tagstring = $tagstring . "<br/>" . $content;
+            }
+            $i++;
         }
 
         return do_shortcode($tagstring);
@@ -248,36 +262,13 @@ class PPPCAMindbodyPlugin {
         ), $attrs );
 
         $sessionData = unserialize($_SESSION["pp-pca-mindbody-login"]);
-        $clientService = $this->getClassService();
-
-        $classDescriptionIDs = array();
-        $classIDs = array();
-        $staffIDs = array();
-
-        $startDate = new DateTime();
-        $startDate->modify("-90 days");
-
-        // Next 12 months.
-        $endDate = new DateTime();
-        $endDate->modify("+120 days");
-
-        $response = $clientService->GetClasses(
-            $classDescriptionIDs,
-            $classIDs,
-            $staffIDs,
-            $startDate,
-            $endDate,
-            $sessionData->getClientId()
-        );
 
         $i = 0;
         $found = 0;
-        foreach ($response->GetClassesResult->Classes->Class as $myClass) {
-            if ($myClass->IsEnrolled == 1) {
-                if (strcmp($classAttributes['id'], $myClass->ClassScheduleID) == 0) {
-                    $found = 1;
-                    break;
-                }
+        foreach ($sessionData->getClassList() as $myClass) {
+            if (strcmp($classAttributes['id'], $myClass->ClassScheduleID) == 0) {
+                $found = 1;
+                break;
             }
         }
         if ($found == 1) {
