@@ -49,8 +49,30 @@ class PPPCAMindbodyPlugin {
     }
     public function init() {
         add_shortcode('pp-pca-mindbody-login', array($this, 'shortcodeLogin'));
-        add_shortcode('pp-pca-mindbody-classes', array($this, 'shortcodeClasses'));
+        add_shortcode('pp-pca-mindbody-class-list', array($this, 'shortcodeClassList'));
+        add_shortcode('pp-pca-mindbody-class', array($this, 'shortcodeClass'));
         add_action( 'template_include', array($this, 'template_include'));
+	add_shortcode('hide_panes', array($this, 'hidePanes'));
+    }
+    public function hidePanes() {
+		$sc = "<script type='text/javascript'>" .
+			// "<!--" .
+			"(function() {" .
+			"  var fn = function(){" .
+			"    jQuery('.wks').hide();" .
+			"    jQuery('#'+jQuery(this).html()).toggle();" .
+			"  };" .
+			"  var panes = jQuery('.wks');" .
+			"  for (var k = 1; k <= panes.length; k++) {" .
+			"    var btn = jQuery('<button/>');" .
+			"    btn.html('wk'+k).click(fn);" .
+			"    jQuery('#btns').append(btn);" .
+			"  }" .
+			"  jQuery('.wks').hide(); jQuery('#wk1').toggle();" .
+			"}());" .
+			// "//-->" .
+			"</script>" ;
+		return $sc;
     }
 
     public function getOption($optionId) {
@@ -96,7 +118,8 @@ class PPPCAMindbodyPlugin {
 	if (is_page() || is_object($post)) {
             if( is_a( $post, 'WP_Post' ) && (
                 has_shortcode( $post->post_content, 'pp-pca-mindbody-login') ||
-                has_shortcode( $post->post_content, 'pp-pca-mindbody-classes') 
+                has_shortcode( $post->post_content, 'pp-pca-mindbody-class-list') ||
+                has_shortcode( $post->post_content, 'pp-pca-mindbody-class')
               )) {
                 if (isset($_GET["pp_pca_mindbody_logout"])) {
                         unset($_SESSION["pp-pca-mindbody-login"]);
@@ -158,26 +181,19 @@ class PPPCAMindbodyPlugin {
         return $logoutLink;
     }
 
+
     ///
     // Adds all of the posts for 
     // a particular class.
     //
-    function shortcodeClasses($attrs) {
+    function shortcodeClassList($attrs) {
 
         $sessionData = unserialize($_SESSION["pp-pca-mindbody-login"]);
         $clientService = $this->getClassService();
 
         $classDescriptionIDs = array();
-        $locationIDs = array();
-        $classScheduleIDs = array();
-        $staffIDs = array();
-        $programIDs = array();
-        $sessionTypeIDs = array();
-        $semesterIDs = array();
-        $courseIDs = array();
         $classIDs = array();
-        unset($startDate);
-        unset($endDate);
+        $staffIDs = array();
 
         $startDate = new DateTime();
         $startDate->modify("-90 days");
@@ -185,12 +201,6 @@ class PPPCAMindbodyPlugin {
         // Next 12 months.
         $endDate = new DateTime();
         $endDate->modify("+120 days");
-
-        print("<pre>");
-        print("Start: " . $startDate->format(DateTime::ATOM) . " end: " . $endDate->format(DateTime::ATOM));
-        print_r($startDate);
-        print_r($endDate);
-        print("</pre>");
 
         $response = $clientService->GetClasses(
             $classDescriptionIDs,
@@ -206,28 +216,79 @@ class PPPCAMindbodyPlugin {
         $i = 0;
         foreach ($response->GetClassesResult->Classes->Class as $myClass) {
             if ($myClass->IsEnrolled == 1) {
-                print("<pre>");
-                print_r($myClass);
-                print("</pre>");
                 array_push($tag, $myClass->ClassScheduleID);
+                $content = 
+                    "[ic_add_posts tag='class-" . $myClass->ClassScheduleID . "']";
+                if( is_admin() ) {
+                    $content = "Class " .
+                        $myClass->ClassScheduleID . ":" . 
+                        $myClass->ClassDescription->Name . ":" .
+                        $content;
+                }
                 if ($i == 0) {
+                    $tagstring = $content;
                 }
                 else {
+                    $tagstring = $tagstring . "<br/>" . $content;
                 }
                 $i++;
-		$tagstring = $tagstring . "," . $myClass->ClassScheduleID;
             }
         }
 
-        $v = "";
-        $classId = "pottery101-fall2014";
-	return $tagstring;
+        return do_shortcode($tagstring);
+    }
+    ///
+    // Adds all of the posts for 
+    // a particular class.
+    //
+    function shortcodeClass($attrs, $content = null) {
 
-        return do_shortcode("[ic_add_posts tag='mindbody-class-" . $classId . "']");
+        $classAttributes = shortcode_atts( array(
+            'id' => 'none'
+        ), $attrs );
+
+        $sessionData = unserialize($_SESSION["pp-pca-mindbody-login"]);
+        $clientService = $this->getClassService();
+
+        $classDescriptionIDs = array();
+        $classIDs = array();
+        $staffIDs = array();
+
+        $startDate = new DateTime();
+        $startDate->modify("-90 days");
+
+        // Next 12 months.
+        $endDate = new DateTime();
+        $endDate->modify("+120 days");
+
+        $response = $clientService->GetClasses(
+            $classDescriptionIDs,
+            $classIDs,
+            $staffIDs,
+            $startDate,
+            $endDate,
+            $sessionData->getClientId()
+        );
+
+        $i = 0;
+        $found = 0;
+        foreach ($response->GetClassesResult->Classes->Class as $myClass) {
+            if ($myClass->IsEnrolled == 1) {
+                if (strcmp($classAttributes['id'], $myClass->ClassScheduleID) == 0) {
+                    $found = 1;
+                    break;
+                }
+            }
+        }
+        if ($found == 1) {
+            return do_shortcode($content);
+        }
+        else {
+            return "You are not enrolled in this class";
+        }
     }
 
 }
-
 $ppPCAMindbodyPlugin = new PPPCAMindbodyPlugin();
 
 
