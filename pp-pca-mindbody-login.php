@@ -9,8 +9,8 @@
  * License: GPL2
  */
 /*  Copyright 2014  Jon Arney, Mark Hamblin (email : jarney1@cox.net)
-
-    This program is free software; you can redistribute it and/or modify
+ 
+   This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as 
     published by the Free Software Foundation.
 
@@ -33,11 +33,15 @@
  * so that we can use that list to show specific content based on the user.
  */
 class PPPCAMindBodyUserData {
+    var $username;
+    var $emailAddress;
     var $mbGUID;
     var $clientId;
     var $classList;
 
-    public function __construct($GUID, $clientId, $classList) {
+    public function __construct($username, $emailAddress, $GUID, $clientId, $classList) {
+        $this->username = $username;
+        $this->emailAddress = $emailAddress;
         $this->mbGUID = $GUID;
         $this->clientId = $clientId;
         $this->classList = $classList;
@@ -49,6 +53,15 @@ class PPPCAMindBodyUserData {
     public function getClientId() {
         return $this->clientId;
     }
+
+    public function getUsername() {
+        return $this->username;
+    }
+
+    public function getEmailAddress() {
+        return $this->emailAddress;
+    }
+
     /**
      * The GUID is a globally unique session ID
      * given to a user when they validate the username
@@ -91,14 +104,18 @@ class PPPCAMindbodyPlugin {
         //     [pp-pca-mindbody-class id=classId]Content To Protect[/pp-pca-mindbody-class]
         add_shortcode('pp-pca-mindbody-class', array($this, 'shortcodeClass'));
 
+        // This shortcode allows you to hide and show certain videos based on
+        // buttons in the HTML code.
+	add_shortcode('hide_panes', array($this, 'hidePanes'));
+
+        // This shortcode allows logged-in users to make comments.
+        add_shortcode('pp-pca-mindbody-comment', array($this, 'shortcodeComment'));
+
         // In order to handle the login correctly, this override allows us to change
         // the template used to render the page based on whether the user has logged in or
         // not.
         add_action( 'template_include', array($this, 'template_include'));
 
-        // This shortcode allows you to hide and show certain videos based on
-        // buttons in the HTML code.
-	add_shortcode('hide_panes', array($this, 'hidePanes'));
     }
     /**
      * This function expands to some JavaScript
@@ -171,7 +188,8 @@ class PPPCAMindbodyPlugin {
             if( is_a( $post, 'WP_Post' ) && (
                 has_shortcode( $post->post_content, 'pp-pca-mindbody-login') ||
                 has_shortcode( $post->post_content, 'pp-pca-mindbody-class-list') ||
-                has_shortcode( $post->post_content, 'pp-pca-mindbody-class')
+                has_shortcode( $post->post_content, 'pp-pca-mindbody-class') ||
+                has_shortcode( $post->post_content, 'pp-pca-mindbody-comment')
               )) {
                 if (isset($_GET["pp_pca_mindbody_logout"])) {
                         unset($_SESSION["pp-pca-mindbody-login"]);
@@ -233,6 +251,8 @@ class PPPCAMindbodyPlugin {
                     }
                     else {
                         $sessionData = new PPPCAMindBodyUserData(
+                            $result->ValidateLoginResult->Client->Email,
+                            $result->ValidateLoginResult->Client->Email,
                             $result->ValidateLoginResult->GUID,
                             $result->ValidateLoginResult->Client->ID,
                             $classList
@@ -325,6 +345,52 @@ class PPPCAMindbodyPlugin {
             return "You are not enrolled in this class";
         }
     }
+
+    function shortcodeComment($attrs, $content = null) {
+
+        if (isset($_POST["pp-pca-mindbody-comment"])) {
+
+            $sessionData = unserialize($_SESSION["pp-pca-mindbody-login"]);
+
+            $commentContent = $_POST["pp-pca-mindbody-comment"];
+
+            $time = current_time('mysql');
+
+            $ip = "127.0.0.1";
+            if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+                $ip = $_SERVER['HTTP_CLIENT_IP'];
+            } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+                $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+            } else {
+                $ip = $_SERVER['REMOTE_ADDR'];
+            }
+
+            $data = array(
+                'comment_post_ID' => get_the_ID(),
+                'comment_author' => $sessionData->getUsername(),
+                'comment_author_email' => $sessionData->getEmailAddress(),
+                'comment_author_url' => 'http://',
+                'comment_content' => $commentContent,
+                'comment_type' => 'text/plain',
+                'comment_parent' => 0,
+                'user_id' => get_current_user_id(),
+                'comment_author_IP' => $ip,
+                'comment_agent' => 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.10) Gecko/2009042316 Firefox/3.0.10 (.NET CLR 3.5.30729)',
+                'comment_date' => $time,
+                'comment_approved' => 1,
+            );
+            wp_insert_comment($data);
+        }
+
+        $scstr = 
+            "<form action=\".\" method=\"POST\">" . 
+            "<textarea name=\"pp-pca-mindbody-comment\" rows=\"4\" cols=\"40\"></textarea><br/>" .
+            "<input name=\"pp_pca_mindbody_submit\" type=\"submit\" value=\"Make Comment\"/>" .
+            "</form>";
+
+        return $scstr;
+    }
+
 
 }
 $ppPCAMindbodyPlugin = new PPPCAMindbodyPlugin();
