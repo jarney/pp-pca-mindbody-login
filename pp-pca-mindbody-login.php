@@ -111,7 +111,7 @@ class PPPCAMindbodyPlugin {
 
         // This shortcode allows you to hide and show certain videos based on
         // buttons in the HTML code.
-	add_shortcode('hide_panes', array($this, 'hidePanes'));
+	add_shortcode('pp-pca-mindbody-content-menu', array($this, 'hidePanes'));
 
         // This shortcode allows logged-in users to make comments.
         add_shortcode('pp-pca-mindbody-comment', array($this, 'shortcodeComment'));
@@ -219,7 +219,7 @@ class PPPCAMindbodyPlugin {
                     $staffIDs = array();
 
                     $startDate = new DateTime();
-                    $startDate->modify("-90 days");
+                    $startDate->modify("-120 days");
 
                     // Next 12 months.
                     $endDate = new DateTime();
