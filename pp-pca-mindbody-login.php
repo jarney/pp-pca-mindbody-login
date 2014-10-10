@@ -241,6 +241,7 @@ class PPPCAMindbodyPlugin {
                             array_push($classList, $myClass);
                         }
                     }
+                    $classList = $this->uniqueClasses($classList);
 
                     $mb_result = ob_get_contents();
 
@@ -320,23 +321,37 @@ class PPPCAMindbodyPlugin {
             foreach ($getClassesResponse->GetClassesResult->Classes->Class as $myClass) {
                 array_push($classList, $myClass);
             }
+            $classList = $this->uniqueClasses($classList);
 
-            $content = "<table>";
+            $allPages = $this->getMindbodyPages();
+
+            $content = "";
+
+            $content = $content . "<table>";
             $content = $content . "<tr>";
             $content = $content . "<td>Class ID</td>";
             $content = $content . "<td>Name</td>";
             $content = $content . "<td>Description</td>";
-            $content = $content . "<td>Start</td>";
-            $content = $content . "<td>End</td>";
             $content = $content . "</tr>";
 
             foreach( $classList as $class) {
                 $content = $content . "<tr>";
                 $content = $content . "<td>" . $class->ClassScheduleID . "</td>";
-                $content = $content . "<td>" . $class->ClassDescription->Name . "</td>";
+
+                $pagesForClass = $this->getPageForClass($allPages, $class->ClassScheduleID);
+
+                if (sizeof($pagesForClass) == 0) {
+                    $content = $content . "<td>" . $class->ClassDescription->Name . "</td>";
+                }
+                else {
+                    $content = $content . "<td>";
+                    foreach ($pagesForClass as $classPage) {
+                        $content = $content . "<a href=\"" . $classPage->guid. "\">" . $classPage->post_title . "</a><br/>";
+                    }
+                    $content = $content . "</td>";
+                }
+
                 $content = $content . "<td>" . $class->ClassDescription->Description . "</td>";
-                $content = $content . "<td>" . $class->StartDateTime . "</td>";
-                $content = $content . "<td>" . $class->EndDateTime . "</td>";
                 $content = $content . "</tr>";
             }
             $content = $content . "</table>";
@@ -344,6 +359,39 @@ class PPPCAMindbodyPlugin {
             return $content;
     }
 
+    function getMindbodyPages() {
+        $pageList = array();
+
+        $args = array(
+            'sort_order' => 'ASC',
+            'sort_column' => 'post_date',
+            'hierarchical' => 0,
+            'exclude' => '',
+            'include' => '',
+            'meta_key' => 'mindbody',
+            'meta_value' => '',
+            'authors' => '',
+            'child_of' => 0,
+            'parent' => -1,
+            'exclude_tree' => '',
+            'number' => '',
+            'offset' => 0,
+            'post_type' => 'page',
+            'post_status' => 'publish'
+        );
+	$allPages = get_pages($args); 
+
+        foreach ($allPages as $page) {
+            $custom_fields = get_post_custom($page->ID);
+            $pagedata = array(
+                'page' => $page,
+                'custom_fields' => $custom_fields
+            );
+            array_push($pageList, $pagedata);
+        }
+
+         return $pageList;
+     }
 
     ///
     // Adds all of the posts for 
@@ -358,28 +406,9 @@ class PPPCAMindbodyPlugin {
         $content = $content . "<td>Class ID</td>";
         $content = $content . "<td>Name</td>";
         $content = $content . "<td>Description</td>";
-        $content = $content . "<td>Start</td>";
-        $content = $content . "<td>End</td>";
         $content = $content . "</tr>";
 
-	$args = array(
-		'sort_order' => 'ASC',
-		'sort_column' => 'post_date',
-		'hierarchical' => 1,
-		'exclude' => '',
- 		'include' => '',
-		'meta_key' => 'mindbody',
-		'meta_value' => '',
-                'authors' => '',
-		'child_of' => 0,
-		'parent' => -1,
-		'exclude_tree' => '',
-		'number' => '',
-		'offset' => 0,
-		'post_type' => 'page',
-                'post_status' => 'publish'
-	); 
-	$allPages = get_pages($args); 
+        $allPages = $this->getMindbodyPages();
 
         foreach( $sessionData->getClassList() as $class) {
             $content = $content . "<tr>";
@@ -398,8 +427,6 @@ class PPPCAMindbodyPlugin {
                 $content = $content . "</td>";
             }
             $content = $content . "<td>" . $class->ClassDescription->Description . "</td>";
-            $content = $content . "<td>" . $class->StartDateTime . "</td>";
-            $content = $content . "<td>" . $class->EndDateTime . "</td>";
             $content = $content . "</tr>";
         }
         $content = $content . "</table>";
@@ -407,19 +434,40 @@ class PPPCAMindbodyPlugin {
         return $content;
     }
 
+    public function uniqueClasses($classList) {
+        $uniqueClassList = array();
+
+	foreach( $classList as $class) {
+            $found = False;
+            foreach ($uniqueClassList as $uClass) {
+                if (strcmp($class->ClassScheduleID, $uClass->ClassScheduleID) == 0) {
+                    $found = True;
+                    break;
+                }
+            }
+            if (!$found) {
+                array_push($uniqueClassList, $class);
+            }
+        }
+
+        return $uniqueClassList;
+    }
+
     public function getPageForClass($allPages, $classId) {
         $pageList = array();
 
-	foreach( $allPages as $page ) {
-            $pageClassIds = explode(",", $page->meta_value);
+	foreach( $allPages as $pagedata ) {
+            $custom_fields = $pagedata['custom_fields'];
+            $page = $pagedata['page'];
+            $mindbodyClasses = $custom_fields['mindbody'][0];
+            $pageClassIds = explode(",", $mindbodyClasses);
             foreach ($pageClassIds as $pageClassId) {
-                if (strcmp($pageClassId, $classId) == 0) {
+                if (strcmp(trim($pageClassId), trim($classId)) == 0) {
                     array_push($pageList, $page);
                     break;
                 }
             }
         }
-
         return $pageList;
     }
 
