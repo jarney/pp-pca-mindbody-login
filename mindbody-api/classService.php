@@ -162,5 +162,71 @@ class MBClassService extends MBAPIService
 		
 		return $result;
 	}
+	/**
+	 * Returns the raw result of the MINDBODY SOAP call.
+	 * @param string $XMLDetail
+	 * @param string $Fields
+	 * @param SourceCredentials $credentials A source credentials object to use with this call
+	 * @return object The raw result of the SOAP call
+	 */
+	public function GetEnrollments(array $locationIDs, array $classScheduleIDs, array $staffIDs, array $programIDs, array $sessionTypeIDs, array $semesterIDs, array $courseIDs, $startDate, $endDate, $PageSize = NULL, $CurrentPage = NULL, $XMLDetail = XMLDetail::Full, $Fields = NULL, SourceCredentials $credentials = null)
+	{
+		$additions = array();
+		if (count($locationIDs) > 0)
+		{
+			$additions['LocationIDs'] = $locationIDs;
+		}
+		if (count($classScheduleIDs) > 0)
+		{
+			$additions['ClassScheduleIDs'] = $classScheduleIDs;
+		}
+		if (count($staffIDs) > 0)
+		{
+			$additions['StaffIDs'] = $staffIDs;
+		}
+		if (count($programIDs) > 0)
+		{
+			$additions['ProgramIDs'] = $programIDs;
+		}
+		if (count($sessionTypeIDs) > 0)
+		{
+			$additions['SessionTypeIDs'] = $sessionTypeIDs;
+		}
+		if (count($semesterIDs) > 0)
+		{
+			$additions['SemesterIDs'] = $semesterIDs;
+		}
+		if (count($courseIDs) > 0)
+		{
+			$additions['CourseIDs'] = $courseIDs;
+		}
+		if (isset($startDate))
+		{
+			$additions['StartClassDateTime'] = $startDate->format(DateTime::ATOM);
+		}
+		if (isset($endDate))
+		{
+			$additions['EndClassDateTime'] = $endDate->format(DateTime::ATOM);
+		}
+		
+		$params = $this->GetMindbodyParams($additions, $this->GetCredentials($credentials), $XMLDetail, $PageSize, $CurrentPage, $Fields);
+		
+		try
+		{
+			$result = $this->client->GetEnrollments($params);
+		}
+		catch (SoapFault $fault)
+		{
+			DebugResponse($result);
+			echo '</xmp><br/><br/> Error Message : <br/>', $fault->getMessage(); 
+		}
+		
+		if ($this->debug)
+		{
+			DebugRequest($this->client);
+			DebugResponse($this->client, $result);
+		}
+		
+		return $result;
+	}
 }
-

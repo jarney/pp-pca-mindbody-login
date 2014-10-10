@@ -97,6 +97,11 @@ class PPPCAMindbodyPlugin {
         // MINDBODY system.
         add_shortcode('pp-pca-mindbody-class-list', array($this, 'shortcodeClassList'));
 
+        // This shortcode expands to show all of the classes in the MINDBODY system
+        // in the recent past and near future along with the descriptions of them
+        // and the corresponding IDs with which to tag pages.
+        add_shortcode('pp-pca-mindbody-class-list-all', array($this, 'shortcodeClassListAll'));
+
         // This shortcode allows you to have specific content which is only visible
         // when a particular class has been enrolled.  This shortcode requires that
         // the 'id' attribute of the class being protected is specified.
@@ -287,6 +292,58 @@ class PPPCAMindbodyPlugin {
     public function getClassList() {
     }
 
+    function shortcodeClassListAll($attrs) {
+            $classService = $this->getClassService();
+
+            $classDescriptionIDs = array();
+            $classIDs = array();
+            $staffIDs = array();
+
+            $startDate = new DateTime();
+            $startDate->modify("-90 days");
+
+            // Next 12 months.
+            $endDate = new DateTime();
+            $endDate->modify("+120 days");
+
+            $classService = $this->getClassService();
+            $getClassesResponse = $classService->GetClasses(
+                $classDescriptionIDs,
+                $classIDs,
+                $staffIDs,
+                $startDate,
+                $endDate,
+		null
+            );
+
+            $classList = array();
+            foreach ($getClassesResponse->GetClassesResult->Classes->Class as $myClass) {
+                array_push($classList, $myClass);
+            }
+
+            $content = "<table>";
+            $content = $content . "<tr>";
+            $content = $content . "<td>Class ID</td>";
+            $content = $content . "<td>Name</td>";
+            $content = $content . "<td>Description</td>";
+            $content = $content . "<td>Start</td>";
+            $content = $content . "<td>End</td>";
+            $content = $content . "</tr>";
+
+            foreach( $classList as $class) {
+                $content = $content . "<tr>";
+                $content = $content . "<td>" . $class->ClassScheduleID . "</td>";
+                $content = $content . "<td>" . $class->ClassDescription->Name . "</td>";
+                $content = $content . "<td>" . $class->ClassDescription->Description . "</td>";
+                $content = $content . "<td>" . $class->StartDateTime . "</td>";
+                $content = $content . "<td>" . $class->EndDateTime . "</td>";
+                $content = $content . "</tr>";
+            }
+            $content = $content . "</table>";
+
+            return $content;
+    }
+
 
     ///
     // Adds all of the posts for 
@@ -296,63 +353,131 @@ class PPPCAMindbodyPlugin {
 
         $sessionData = unserialize($_SESSION["pp-pca-mindbody-login"]);
 
-	$tagstring = "";
-        $i = 0;
-        foreach ($sessionData->getClassList() as $myClass) {
-            $content = 
-                "[ic_add_posts tag='class-" . $myClass->ClassScheduleID . "']";
-            if( is_admin() ) {
-                $content = "Class " .
-                    $myClass->ClassScheduleID . ":" . 
-                    $myClass->ClassDescription->Name . ":" .
-                    $content;
-            }
-            if ($i == 0) {
-                $tagstring = $content;
+        $content = "<table>";
+        $content = $content . "<tr>";
+        $content = $content . "<td>Class ID</td>";
+        $content = $content . "<td>Name</td>";
+        $content = $content . "<td>Description</td>";
+        $content = $content . "<td>Start</td>";
+        $content = $content . "<td>End</td>";
+        $content = $content . "</tr>";
+
+	$args = array(
+		'sort_order' => 'ASC',
+		'sort_column' => 'post_date',
+		'hierarchical' => 1,
+		'exclude' => '',
+ 		'include' => '',
+		'meta_key' => 'mindbody',
+		'meta_value' => '',
+                'authors' => '',
+		'child_of' => 0,
+		'parent' => -1,
+		'exclude_tree' => '',
+		'number' => '',
+		'offset' => 0,
+		'post_type' => 'page',
+                'post_status' => 'publish'
+	); 
+	$allPages = get_pages($args); 
+
+        foreach( $sessionData->getClassList() as $class) {
+            $content = $content . "<tr>";
+            $content = $content . "<td>" . $class->ClassScheduleID . "</td>";
+
+            $pagesForClass = $this->getPageForClass($allPages, $class->ClassScheduleID);
+
+            if (sizeof($pagesForClass) == 0) {
+                $content = $content . "<td>" . $class->ClassDescription->Name . "</td>";
             }
             else {
-                $tagstring = $tagstring . "<br/>" . $content;
+                $content = $content . "<td>";
+                foreach ($pagesForClass as $classPage) {
+                    $content = $content . "<a href=\"" . $classPage->guid. "\">" . $classPage->post_title . "</a><br/>";
+                }
+                $content = $content . "</td>";
             }
-            $i++;
+            $content = $content . "<td>" . $class->ClassDescription->Description . "</td>";
+            $content = $content . "<td>" . $class->StartDateTime . "</td>";
+            $content = $content . "<td>" . $class->EndDateTime . "</td>";
+            $content = $content . "</tr>";
+        }
+        $content = $content . "</table>";
+
+        return $content;
+    }
+
+    public function getPageForClass($allPages, $classId) {
+        $pageList = array();
+
+	foreach( $allPages as $page ) {
+            $pageClassIds = explode(",", $page->meta_value);
+            foreach ($pageClassIds as $pageClassId) {
+                if (strcmp($pageClassId, $classId) == 0) {
+                    array_push($pageList, $page);
+                    break;
+                }
+            }
         }
 
-        return do_shortcode($tagstring);
+        return $pageList;
     }
+
+    function isInClass($sessionData, $classIdList) {
+        $found = 0;
+	$classIds = explode(",", $classIdList);
+
+	foreach ($classIds as $classId) {
+	        foreach ($sessionData->getClassList() as $myClass) {
+	            if (strcmp($classId, $myClass->ClassScheduleID) == 0) {
+	                $found = 1;
+	                break;
+	            }
+	        }
+		if ($found == 1) {
+                    return True;
+                }
+	}
+        return False;
+    }
+
     ///
     // Adds all of the posts for 
     // a particular class.
     //
     function shortcodeClass($attrs, $content = null) {
 
+        $data = "";
+
         $classAttributes = shortcode_atts( array(
             'id' => 'none'
         ), $attrs );
 
         $sessionData = unserialize($_SESSION["pp-pca-mindbody-login"]);
-
-        $i = 0;
-        $found = 0;
-        foreach ($sessionData->getClassList() as $myClass) {
-            if (strcmp($classAttributes['id'], $myClass->ClassScheduleID) == 0) {
-                $found = 1;
-                break;
-            }
-        }
-        if ($found == 1) {
-            return do_shortcode($content);
+        $found = $this->isInClass($sessionData, $classAttributes['id']);
+        if ($found) {
+            $data = $data . do_shortcode($content);
         }
         else {
-            return "You are not enrolled in this class";
+            $data = $data . "You are not enrolled in this class";
         }
+
+        return $data;
     }
 
     function shortcodeComment($attrs, $content = null) {
+        if (isset($_GET["pp-pca-mindbody-comment-delete"])) {
+            if ( current_user_can('moderate_comments') ) {
+                $comment_id = $_GET["pp-pca-mindbody-comment-delete"];
+                wp_set_comment_status( $comment_id, 'hold' );
+            }
+        }
 
         if (isset($_POST["pp-pca-mindbody-comment"])) {
 
             $sessionData = unserialize($_SESSION["pp-pca-mindbody-login"]);
 
-            $commentContent = $_POST["pp-pca-mindbody-comment"];
+            $commentContent = sanitize_text_field($_POST["pp-pca-mindbody-comment"]);
 
             $time = current_time('mysql');
 
@@ -379,16 +504,37 @@ class PPPCAMindbodyPlugin {
                 'comment_date' => $time,
                 'comment_approved' => 1,
             );
+
             wp_insert_comment($data);
         }
 
-        $scstr = 
+
+        $content = "";
+
+        $args = array(
+	    'status' => 'approve',
+            'orderby' => 'comment_date_gmt',
+            'order' => 'ASC',
+            'post_id' => get_the_ID(),
+        );
+        $comments = get_comments($args);
+        foreach($comments as $comment) {
+            $content = $content . $comment->comment_author . " : " . $comment->comment_date . ":<br/>";
+            $content = $content . $comment->comment_content . "<br/>";
+            if ( current_user_can('moderate_comments') ) {
+                $content = $content . "<a href=\".?pp-pca-mindbody-comment-delete=" . $comment->comment_ID . "\">Remove Comment</a><br/>";
+            }
+            $content = $content . "<hr/>";
+        }
+
+
+        $content = $content . 
             "<form action=\".\" method=\"POST\">" . 
-            "<textarea name=\"pp-pca-mindbody-comment\" rows=\"4\" cols=\"40\"></textarea><br/>" .
+            "<textarea name=\"pp-pca-mindbody-comment\" rows=\"4\" cols=\"60\"></textarea><br/>" .
             "<input name=\"pp_pca_mindbody_submit\" type=\"submit\" value=\"Make Comment\"/>" .
             "</form>";
 
-        return $scstr;
+        return $content;
     }
 
 

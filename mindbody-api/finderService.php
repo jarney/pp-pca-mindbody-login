@@ -174,4 +174,3 @@ class MBFinderService extends MBAPIService
 		return $result;
 	}
 }
-
