@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: PP PCA Mindbody Login
- * Plugin URI: http://URI_Of_Page_Describing_Plugin_and_Updates
+ * Plugin URI: https://github.com/jarney/pp-pca-mindbody-login
  * Description: This plugin provides a way for clients of the MindBody system to log into a WordPress page and show the user information unique to that user's classes and settings.
  * Version: 1.0
  * Author: Jon Arney, Mark Hamblin
- * Author URI: http://www.paypal.com/
+ * Author URI: https://github.com/jarney/pp-pca-mindbody-login
  * License: GPL2
  */
 /*  Copyright 2014  Jon Arney, Mark Hamblin (email : jarney1@cox.net)
