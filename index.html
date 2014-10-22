@@ -78,6 +78,7 @@ $('img').on('mouseenter', function() {
     }
     else {
 	$tooltip.empty();
+	$('.col4').empty();
     }
     if (0) {
 	$tooltip
@@ -102,7 +103,13 @@ $('img').on('mouseenter', function() {
 	cnv.click(function(e){
 		console.log(e);//pageY,pageX
 	});
-	$tooltip.append(cnv);
+	var tds = $img.closest("tr").find("td");
+	if (tds.length >= 4) {
+		$(tds[3]).empty().append(cnv);
+	}
+	else {
+		$tooltip.append(cnv);
+	}
 	var ctx = cnv[0].getContext('2d');
 	ctx.drawImage(nativeImage,0,0,w,h);
 	if (0) {
@@ -328,6 +335,7 @@ The next sections of this document go through the process of creating a new page
 Take note of the “ID” listed for the new class so that it can be used to associate to the corresponding WoddPress page in later steps.
                 </p>
             </td>
+	    <td class=col4></td>
         </tr>
         
         <tr class="sect5">
@@ -386,6 +394,7 @@ Embed tags for video 4 go here...
 Note that each embed link is surrounded by its own “div” tag inside the “panes” section.  Note also that the shortcode [pp-pca-mindbody-content-menu] provides the JavaScript necessary to display the menu and choose the videos or other content.
 </p>
             </td>
+	    <td class=col4></td>
         </tr>
 
         <tr class="sect6 secthdr">
