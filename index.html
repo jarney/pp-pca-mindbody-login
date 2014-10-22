@@ -28,6 +28,9 @@ $(function(){
 		if (s != "sect1") $(".sect1").hide();
 		if (s != "sect2") $(".sect2").hide();
 		if (s != "sect3") $(".sect3").hide();
+		if (s != "sect4") $(".sect4").hide();
+		if (s != "sect5") $(".sect5").hide();
+		if (s != "sect6") $(".sect6").hide();
 		$("."+s).show();
 		$(".secthdr").show();
 	};
@@ -44,6 +47,15 @@ $(".secthdr").click(function(){
 	}
 	else if ($elem.hasClass("sect3")) {
 		selfn("sect3");
+	}
+	else if ($elem.hasClass("sect4")) {
+		selfn("sect4");
+	}
+	else if ($elem.hasClass("sect5")) {
+		selfn("sect5");
+	}
+	else if ($elem.hasClass("sect6")) {
+		selfn("sect6");
 	}
 });
 $('img').on('mouseenter', function() {
@@ -258,11 +270,144 @@ Repeat for Members, Posts in Page?, Others???
 <br>Mindbody API Site Owner Password = Password above (see note as above)
 		</td>
 	</tr>
+        <tr class="sect4 secthdr">
+            <td colspan="3"><h3>Creating the "Course Catalog" page</h3></td>
+        </tr>
+        <tr class="sect4">
+            <td>
+                1.
+            </td>
+            <td><img class="tn" src="imgs/course-catalog-page-create.png" /></td>
+            <td>
+The course catalog page is a special page used by teachers and administrators to help associate the classes as configured in the MINDBODY system with the pages in the WordPress website.  This special page should be accessible only to teachers and administrators who need to know this mapping in order to ensure that the class content on the website is restricted to the appropriate users.  This page should be created and given the title “Course Catalog”.  The URL to this page should be well-known to administrators and teachers, however, it should not be linked directly to the website for external users.    The page only needs to contain the specific short-code “[pp-pca-mindbody-class-list-all]”  This will create a table from the MINDBODY system containing the list of classes set up in that system as well as the class IDs associated with them.
+            </td>
+        </tr>
+        <tr class="sect4">
+            <td>
+                2.
+            </td>
+            <td><img class="tn" src="imgs/course-catalog-page-permissions.png" /></td>
+            <td>
+The page content should be restricted only to the specific roles that need to be able to see this information.  Other users will not be able to access this page.
+            </td>
+        </tr>
+
+        <tr class="sect5 secthdr">
+            <td colspan="3"><h3>How to create class pages</h3></td>
+        </tr>
+        <tr class="sect5">
+            <td>
+                1. Introduction
+            </td>
+            <td></td>
+            <td>
+This document describes the steps necessary to create an online class using the WordPress frameworks set up for Phoenix Center for the Arts.  The main requirements for the online-class pages are that they:
+<ul>
+    <li>Are accessible only to students who have registered for that specific class.</li>
+    <li>Allow students to post comments and questions.</li>
+    <li>Have content authored by an instructor and approved and published by a course administrator.</li>
+    
+</ul>
+We encourage you to build several classes in the test site and experiment with different ways to structure the pages so that you can arrive at a structure that works best for the organization.  This document should help by providing an initial configuration which can be used as a template for later expansions.
+The next sections of this document go through the process of creating a new page associated with class content and configuring it appropriately to meet these requirements.  The first step is to create the class in the MINDBODY system.  Once created, the ID of the class must be noted down so that the page created for that class can be used to restrict content to only those users who have registered for that class.  Next, the teacher responsible for the course-content should log into WordPress and create a page corresponding to that class.  This page will serve as the landing page for students registered for that class.  It is important that this page be created by the person responsible for the content because the creator of the page will have permission to edit the page and will be the primary person to maintain the content.
+
+
+            </td>
+        </tr>
+        <tr class="sect5">
+            <td>
+                2. Create new class in MINDBODY
+            </td>
+            <td><img class="tn" src="imgs/create-class-catalog.png" /></td>
+            <td>
+                <p>
+                The first step in creating a new class is to configure the class in the MINDBODY system.  This is done through the MINDBODY interface in much the same was as has always been done.  No specific settings in MINDBODY are required.  Once the class is created, the specific ID for that class must be obtained.  This can be done by referring to the page entitled
+“Online Class Listing”.
+                </p>
+                <p>
+Take note of the “ID” listed for the new class so that it can be used to associate to the corresponding WoddPress page in later steps.
+                </p>
+            </td>
+        </tr>
+        
+        <tr class="sect5">
+            <td>
+                3. Teacher creates a new page in WordPress
+            </td>
+            <td><img class="tn" src="imgs/create-class-vimeo.png" /></td>
+            <td>
+                <p>
+                The teacher responsible for running this class should now create a new page for this class in the WordPress system.  The teacher should create this page so that they can edit the class content later during the semester if necessary.  In addition, the teacher will be primarily responsible for making sure that the course content is appropriate for the class.  In addition to the main content itself, there are a few key things that need to be a part of the associated page in order to ensure that it operates correctly for students.  In particular, in order to restrict the class content to only the appropriate students, the following two short-codes should appear at the top of the class page:
+                </p>
+
+<pre>
+[pp-pca-mindbody-login]
+[pp-pca-mindbody-class id=2215]
+</pre>
+And at the bottom of the class page, these short-codes must appear.
+<pre>
+[pp-pca-mindbody-comment]
+[/pp-pca-mindbody-class]
+</pre>
+
+<p>
+The first sets up this page to require that the person viewing the page is a valid user in the MINDBODY system.  The second ensures that the user is registered for the MINDBODY class “2215”.  The class ID used here is the one established in the earlier step for creating the class in the MINDBODY system.  The third allows students to post comments on the page, allowing the students a way to ask questions.  The final closes the section that is accessible only to students and is a required ending tag.
+</p>
+
+<p>
+Apart from those restrictions, the class content itself can be built by the instructor using videos embedded in the page, hyperlinks to documents, or any other type of material the instructor feels is appropriate for the class.
+Specifically for video content, we have provided a menu system which allows those videos to be embedded in the page and accessed while minimizing the amount of page space taken.  In order to make use of this, first obtain the “embed” link from Vimeo or other video sharing service:
+</p>
+ 
+<p>
+Each video will have its own “embed” tags.  These can be combined in the structure as shown below to provide students a convenient way to choose between the various videos.  This is especially useful when a limited amount of page space is devoted to videos and the remainder of the space is devoted to supplemental course materials.
+</p>
+
+<pre>
+&lt;div id=btns&gt;&lt;/div&gt;
+&lt;div id=panes&gt;
+&lt;div id=wk1 class=wks&gt;
+Embed tags for video 1 go here...
+&lt;/div&gt;
+&lt;div id=wk2 class=wks&gt;
+Embed tags for video 2 go here...
+&lt;/div&gt;
+&lt;div id=wk3 class=wks&gt;
+Embed tags for video 3 go here...
+&lt;/div&gt;
+&lt;div id=wk4 class=wks&gt;
+Embed tags for video 4 go here...
+
+&lt;/div&gt;
+[pp-pca-mindbody-content-menu]
+</pre>
+
+<p>
+Note that each embed link is surrounded by its own “div” tag inside the “panes” section.  Note also that the shortcode [pp-pca-mindbody-content-menu] provides the JavaScript necessary to display the menu and choose the videos or other content.
+</p>
+            </td>
+        </tr>
+
+        <tr class="sect6 secthdr">
+            <td colspan="3"><h3>Shortcode reference Guide</h3></td>
+        </tr>
+        <tr class="sect6 secthdr">
+            <td></td>
+            <td></td>
+            <td>
+                A more full description of the short-codes provided for
+                MINDBODY integration can be found in the
+                <a href="https://github.com/jarney/pp-pca-mindbody-login">documentation for the PP-PCA Mindbody plugin</a>
+            </td>
+        </tr>
+
+        
 </table>
 
 
 
 
+<!--
 Shortcodes:
 
 WordPress screenshots <a target=_blank href="http://www.phxartclass.com/wp-admin/">WordpressAdmin</a>:
@@ -270,7 +415,6 @@ WordPress screenshots <a target=_blank href="http://www.phxartclass.com/wp-admin
 Shortcode page
 <br>
 
-<!--
 HOW DO I INSTALL THE PLUGINS AND OTHER SETUP?
 HOW DO I CREATE A CLASS?  TEACHER?  SEMESTER?  NEW WEEKs LESSON?  CATEGORIES?  TAGS?
 To create a class/lesson:  Create a post for the new class.  Tag it with the class-tag ("class-" + MindBody-ID).  Done by teacher?  If not done by teacher, how will teacher have editing rights to it?
