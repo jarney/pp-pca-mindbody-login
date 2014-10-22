@@ -1,6 +1,280 @@
+<!DOCTYPE html>
 <html>
-<head></head>
-<body>
-<h1>Hello World</h1>
-</body>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title> SBC - jsFiddle demo</title>
+  
+  <script src="/jq.js"></script>
+  <!--script type='text/javascript' src='http://code.jquery.com/jquery-1.8.3.js'></script-->
+  
+  <style type='text/css'>
+    body > img, .tn {
+    width: 50px;
+    height: 50px;
+    display: block;
+}
+#fullsize {
+    position: absolute;
+}
+#fullsize.hidden {
+    display: none;
+}
+  </style>
+
+<script type='text/javascript'>//<![CDATA[ 
+$(function(){
+	var inline_mode = 1;
+	var selfn = function(s) {
+		if (s != "sect1") $(".sect1").hide();
+		if (s != "sect2") $(".sect2").hide();
+		if (s != "sect3") $(".sect3").hide();
+		$("."+s).show();
+		$(".secthdr").show();
+	};
+	var $tooltip = $('#fullsize');
+	$tooltip = $('#topcorner');
+	selfn("sect1");
+$(".secthdr").click(function(){
+	var $elem = $(this);
+	if ($elem.hasClass("sect1")) {
+		selfn("sect1");
+	}
+	else if ($elem.hasClass("sect2")) {
+		selfn("sect2");
+	}
+	else if ($elem.hasClass("sect3")) {
+		selfn("sect3");
+	}
+});
+$('img').on('mouseenter', function() {
+    var img = this,
+        $img = $(img),
+        offset = $img.offset(),
+	nativeImage = new Image(),
+	cnv = 0,
+	src = $img.attr("src");
+    nativeImage.src = src;
+
+    if (!inline_mode) {
+	// First, clear the absolute div,
+	$tooltip.empty().addClass('hidden');
+	$tooltip
+	.css({
+		'top': 0, // offset.top,
+		'left': $(window).width() - (nativeImage.width*.75), // offset.left,
+	});
+    }
+    else {
+	$tooltip.empty();
+    }
+    if (0) {
+	$tooltip
+	.append($img.clone().css({'width':(nativeImage.width*.75)+'px','height':(nativeImage.height*.75)+'px'}));
+    }
+    else {
+	var ellipse = function(x,y,rx,ry) {
+		ctx.save();
+		ctx.lineWidth = 3;
+		ctx.strokeStyle = '#FF0000';
+		ctx.scale(rx/ry,1);
+		ctx.beginPath();
+		ctx.arc(x/(rx/ry),y,ry,0,Math.PI*2,false);
+		ctx.stroke();
+		ctx.closePath();
+		ctx.restore();
+	};
+	var xscale = 4.2, yscale = 1;
+	var imgScale = nativeImage.width>700?.75:1.0;
+	var h = nativeImage.height*imgScale, w = nativeImage.width*imgScale;
+	cnv = $("<canvas/>").attr("width",w).attr("height",h);
+	cnv.click(function(e){
+		console.log(e);//pageY,pageX
+	});
+	$tooltip.append(cnv);
+	var ctx = cnv[0].getContext('2d');
+	ctx.drawImage(nativeImage,0,0,w,h);
+	if (0) {
+		ctx.save();
+		ctx.lineWidth = 3;
+		ctx.strokeStyle = '#FF0000';
+		ctx.scale(xscale,yscale);
+		ctx.beginPath();
+		console.log(w+','+h);
+		ctx.arc((w/2)/xscale,(h/2)/yscale,25,0,Math.PI*2,false);
+		ctx.stroke();
+		ctx.closePath();
+		ctx.restore();
+	}
+	else {
+		if (src.indexOf("creds.step4") != -1) {
+			ellipse(w/2,225,w/2,20);
+		}
+		else if (src.indexOf("creds.step6") != -1) {
+			ctx.fillStyle = "#EEEEEE";
+			ctx.fillRect(550,450,200,15);
+			ctx.fillRect(550,400,200,15);
+			ctx.stroke();
+			ctx.fillStyle = "#FF0000";
+			ctx.font = '10px sans-serif';
+			ctx.fillText("<key>",560,460);
+			ctx.fillText("<Name>",560,410);
+			ctx.stroke();
+		}
+		else if (src.indexOf("plugins.step1") != -1) {
+			ellipse(50,530,75,20);
+			ellipse(200,565,75,20);
+		}
+		else if (src.indexOf("/./plugins.step2") != -1) {
+			ellipse(200,200,40,15);
+		}
+		else if (src.indexOf("plugins.step2") != -1) {
+			ellipse(200,290,75,20);
+		}
+		else if (src.indexOf("plugins.step4") != -1) {
+			ellipse(660,425,75,20);
+		}
+		else if (src.indexOf("plugins.step5") != -1) {
+			ellipse(200,280,75,20);
+		}
+		else if (src.indexOf("settings.step1") != -1) {
+			ellipse(50,475,75,20);
+			ellipse(160,635,75,20);
+		}
+	}
+    }
+    $tooltip
+    .removeClass('hidden');
+});
+$tooltip.on('mouseleave', function() {
+	if (!inline_mode) {
+		$tooltip.empty().addClass('hidden');
+	}
+});
+});//]]>  
+</script>
+ </head>
+ <body>
+  <div id="fullsize_x"></div>
+  <span id="topcorner" style="float:right" border=1></span>
+
+
+<table>
+	<tr class="sect1 secthdr">
+		<td colspan=3><h3>Registering Credentials</h3></td>
+	</tr>
+	<tr class="sect1">
+		<td>1.</td>
+		<td><img class=tn src="imgs/step1.final.png" /></td>
+		<td>Go to <a href="https://developers.mindbodyonline.com">the MindBody developer site</a>.  Click on "Start Developing".</td>
+	</tr>
+	<tr class="sect1">
+		<td>2.</td>
+		<td><img class=tn src="imgs/step2.final.png" /></td>
+		<td>Fill in your account information.  Remember your business name, email, and password, as you will need these later.</td>
+	</tr>
+	<tr class="sect1">
+		<td>3.</td>
+		<td><img class=tn src="imgs/step3.png" /></td>
+		<td>You will see this page directing you to your email.</td>
+	</tr>
+	<tr class="sect1">
+		<td>4.</td>
+		<td><img class=tn src="imgs/creds.step4.png" /></td>
+		<td>You should receive an email similar to this</td>
+	</tr>
+	<tr class="sect1">
+		<td>5.</td>
+		<td><img class=tn src="imgs/step5.final.png" /></td>
+		<td>Follow the link to a page like this.  Use the email and password you used before.</td>
+	</tr>
+	<tr class="sect1">
+		<td>6.</td>
+		<td><img class=tn src="imgs/creds.step6.png" /></td>
+		<td>You will land at the following page, which displays your business name with a key.  You will use these values together as the API login credentials in the "PP PCA Mindbody Plugin" settings page in WordPress.  Note that you will also need to request to MindBody to go live before you may start using these credentials on your live site.</td>
+	</tr>
+	<tr class="sect2 secthdr">
+		<td colspan=3><h3>Plugins:</h3></td>
+	</tr>
+	<tr class="sect2">
+		<td>1.</td>
+		<td></td>
+		<td>
+To install plugins, open the plugins panel, click "Add New", enter Admin Menu Editor
+<a target=_blank href="https://github.com/jarney/pp-pca-mindbody-login">Custom PCA Plugin</a>
+<ul>
+<li>Go to page
+<li>Download ZIP
+<li>Go to admin/plugins page...Add New...Upload...
+</ul>
+Repeat for Members, Posts in Page?, Others???
+		</td>
+	</tr>
+	<tr class="sect2">
+		<td>2.</td>
+		<td><img class=tn src="imgs/plugins.step1.png" /></td>
+		<td>Select Plugins and Add New from the left-hand menu.</td>
+	</tr>
+	<tr class="sect2">
+		<td>3.</td>
+		<td><img class=tn src="imgs/plugins.step2.png" /></td>
+		<td>Enter "Admin Menu Editor" and press "Search Plugins".  Repeat for <b>???</b>.</td>
+	</tr>
+	<tr class="sect2">
+		<td>4.</td>
+		<td><img class=tn src="imgs/plugins.step3.png" /></td>
+		<td>You will now see a screen like this.  In this example, the Admin Menu Editor plugin is already installed, but if it were not you would see an option to "Install Now".</td>
+	</tr>
+	<tr class="sect2">
+		<td>5.</td>
+		<td><img class=tn src="imgs/plugins.step4.png" /></td>
+		<td>After you have installed all the standard plugins, you need to install the custom pp-pca-mindbody-login plugin.  First, go to <a target=_blank href="https://github.com/jarney/pp-pca-mindbody-login">Custom PCA Plugin</a> and press the Download ZIP button.</td>
+	</tr>
+	<tr class="sect2">
+		<td>6.</td>
+		<td><img class=tn src="imgs/./plugins.step2.png" /></td>
+		<td>Go back to the Install Plugins page from step 3 and select the Upload option.</td>
+	</tr>
+	<tr class="sect2">
+		<td>7.</td>
+		<td><img class=tn src="imgs/plugins.step5.png" /></td>
+		<td>Press the Browse button and find the file you saved in step 5.</td>
+	</tr>
+	<tr class="sect3 secthdr">
+		<td colspan=3><h3>Settings:</h3></td>
+	</tr>
+	<tr class="sect3">
+		<td>1.</td>
+		<td><img class=tn src="imgs/settings.step1.png" /></td>
+		<td>Go to the PP PCA Mindbody Plugin Settings page.</td>
+	</tr>
+	<tr class="sect3">
+		<td>2.</td>
+		<td><img class=tn src="imgs/settings.step2.png" /></td>
+		<td>Settings page — Describe how/where to fill in API creds
+<br>Mindbody API Source Name = Source Name from step 6 above
+<br>Mindbody API Password = Key for step 6 above
+<br>Mindbody API Site ID = Studio ID above (for sandbox, you will receive a new Studio ID when you go live)
+<br>Mindbody API Site Owner = Username above (for sandbox, again you will set up a real name when you go live)
+<br>Mindbody API Site Owner Password = Password above (see note as above)
+		</td>
+	</tr>
+</table>
+
+
+
+
+Shortcodes:
+
+WordPress screenshots <a target=_blank href="http://www.phxartclass.com/wp-admin/">WordpressAdmin</a>:
+<br>
+Shortcode page
+<br>
+
+<!--
+HOW DO I INSTALL THE PLUGINS AND OTHER SETUP?
+HOW DO I CREATE A CLASS?  TEACHER?  SEMESTER?  NEW WEEKs LESSON?  CATEGORIES?  TAGS?
+To create a class/lesson:  Create a post for the new class.  Tag it with the class-tag ("class-" + MindBody-ID).  Done by teacher?  If not done by teacher, how will teacher have editing rights to it?
+-->
+ </body>
 </html>
+
