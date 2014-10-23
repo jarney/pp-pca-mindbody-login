@@ -19,11 +19,110 @@
 #fullsize.hidden {
     display: none;
 }
+.tabrow {
+    text-align: left;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    line-height: 24px;
+}
+.tabrow li {
+    margin: 0 10px;
+    padding: 0 10px;
+    border: 1px solid #AAA;
+    background: #ECECEC;
+    display: inline-block;
+}
+.tabrow li.selected {
+    background: #FFF;
+    color: #000;
+}
+.tabrow {
+    position: relative;
+}
+.tabrow:after {
+    position: absolute;
+    content: "";
+    width: 100%;
+    bottom: 0;
+    left: 0;
+    border-bottom: 1px solid #AAA;
+    z-index: 1;
+}
+.tabrow:before {
+    z-index: 1;
+}
+.tabrow li {
+    position: relative;
+    z-index: 0;
+}
+.tabrow li.selected {
+    z-index: 2;
+    border-bottom-color: #FFF;
+}
+.tabrow li:before,
+.tabrow li:after {
+    position: absolute;
+    bottom: -1px;
+    width: 6px;
+    height: 6px;
+    content: " ";
+}
+.tabrow li:before {
+    left: -6px;
+}
+.tabrow li:after {
+    right: -6px;
+}
+.tabrow li:after, .tabrow li:before {
+    border: 1px solid #AAA;
+}
+.tabrow li {
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+.tabrow li:before {
+    border-bottom-right-radius: 6px;
+    border-width: 0 1px 1px 0;
+}
+.tabrow li:after {
+    border-bottom-left-radius: 6px;
+    border-width: 0 0 1px 1px;
+}
+.tabrow li:before {
+    box-shadow: 2px 2px 0 red;
+}
+.tabrow li:after {
+    box-shadow: -2px 2px 0 red;
+}
+.tabrow li:before {
+    box-shadow: 2px 2px 0 #ECECEC;
+}
+.tabrow li:after {
+    box-shadow: -2px 2px 0 #ECECEC;
+}
+.tabrow li.selected:before {
+    box-shadow: 2px 2px 0 #FFF;
+}
+.tabrow li.selected:after {
+    box-shadow: -2px 2px 0 #FFF;
+}
+.tabrow li {
+    background:      -o-linear-gradient(top, #ECECEC 50%, #D1D1D1 100%);
+    background:     -ms-linear-gradient(top, #ECECEC 50%, #D1D1D1 100%);
+    background:    -moz-linear-gradient(top, #ECECEC 50%, #D1D1D1 100%);
+    background: -webkit-linear-gradient(top, #ECECEC 50%, #D1D1D1 100%);
+    background: linear-gradient(top, #ECECEC 50%, #D1D1D1 100%);
+    box-shadow: 0 3px 3px rgba(0, 0, 0, 0.4), inset 0 1px 0 #FFF;
+    text-shadow: 0 1px #FFF;
+    margin: 0 -5px;
+    padding: 0 20px;
+}
   </style>
 
 <script type='text/javascript'>//<![CDATA[ 
 $(function(){
-	var inline_mode = 1;
+	var inline_mode = 0;
 	var selfn = function(s) {
 		if (s != "sect1") $(".sect1").hide();
 		if (s != "sect2") $(".sect2").hide();
@@ -35,10 +134,12 @@ $(function(){
 		$(".secthdr").show();
 	};
 	var $tooltip = $('#fullsize');
-	$tooltip = $('#topcorner');
+	//$tooltip = $('#topcorner');
 	selfn("sect1");
 $(".secthdr").click(function(){
 	var $elem = $(this);
+	$(".secthdr").removeClass("selected");
+	$elem.addClass("selected");
 	if ($elem.hasClass("sect1")) {
 		selfn("sect1");
 	}
@@ -57,6 +158,7 @@ $(".secthdr").click(function(){
 	else if ($elem.hasClass("sect6")) {
 		selfn("sect6");
 	}
+	$tooltip.empty();
 });
 $('img').on('mouseenter', function() {
     var img = this,
@@ -66,14 +168,17 @@ $('img').on('mouseenter', function() {
 	cnv = 0,
 	src = $img.attr("src");
     nativeImage.src = src;
+    var imgScale = nativeImage.width>700?.75:1.0;
+    var h = nativeImage.height*imgScale, w = nativeImage.width*imgScale;
 
     if (!inline_mode) {
+	var top = (window.pageYOffset || document.scrollTop)  - (document.clientTop || 0); // top of screen, accouting for scrolling...
 	// First, clear the absolute div,
-	$tooltip.empty().addClass('hidden');
+	$tooltip.empty().removeClass('hidden');
 	$tooltip
 	.css({
-		'top': 0, // offset.top,
-		'left': $(window).width() - (nativeImage.width*.75), // offset.left,
+		'top': top, // 0, // offset.top,
+		'left': $(window).width() - (w), // offset.left,
 	});
     }
     else {
@@ -97,8 +202,11 @@ $('img').on('mouseenter', function() {
 		ctx.restore();
 	};
 	var xscale = 4.2, yscale = 1;
-	var imgScale = nativeImage.width>700?.75:1.0;
-	var h = nativeImage.height*imgScale, w = nativeImage.width*imgScale;
+	$(".tablecontainer").css("width",($(window).width()-w-20)+"px");
+	offset = $img.closest("td").offset();
+	$("tr").css({"border":"","background-color":"#FFF"});
+	$img.closest("tr").css({"border":"1px solid black","background-color":"#FFAAAA"});
+	$tooltip.css("top",offset.top);
 	cnv = $("<canvas/>").attr("width",w).attr("height",h);
 	cnv.click(function(e){
 		console.log(e);//pageY,pageX
@@ -173,14 +281,22 @@ $tooltip.on('mouseleave', function() {
 </script>
  </head>
  <body>
-  <div id="fullsize_x"></div>
+  <div id="fullsize"></div>
   <span id="topcorner" style="float:right" border=1></span>
+<ul class="tabrow">
+    <li class="sect1 secthdr selected">Creds</li>
+    <li class="sect2 secthdr">Plugins</li>
+    <li class="sect3 secthdr">Settings</li>
+    <li class="sect4 secthdr">Course Catalog</li>
+    <li class="sect5 secthdr">Class Page</li>
+    <li class="sect6 secthdr">Shortcodes</li>
+</ul>
 
-
-<table>
-	<tr class="sect1 secthdr">
+<div class=tablecontainer style="height:90%;width:800px;overflow-y:scroll">
+<table style="width:100%;border-collapse:collapse;">
+	<!--tr class="sect1 secthdr">
 		<td colspan=3><h3>Registering Credentials</h3></td>
-	</tr>
+	</tr-->
 	<tr class="sect1">
 		<td>1.</td>
 		<td><img class=tn src="imgs/step1.final.png" /></td>
@@ -211,9 +327,9 @@ $tooltip.on('mouseleave', function() {
 		<td><img class=tn src="imgs/creds.step6.png" /></td>
 		<td>You will land at the following page, which displays your business name with a key.  You will use these values together as the API login credentials in the "PP PCA Mindbody Plugin" settings page in WordPress.  Note that you will also need to request to MindBody to go live before you may start using these credentials on your live site.</td>
 	</tr>
-	<tr class="sect2 secthdr">
+	<!--tr class="sect2 secthdr">
 		<td colspan=3><h3>Plugins:</h3></td>
-	</tr>
+	</tr-->
 	<tr class="sect2">
 		<td>1.</td>
 		<td></td>
@@ -258,9 +374,9 @@ Repeat for Members, Posts in Page?, Others???
 		<td><img class=tn src="imgs/plugins.step5.png" /></td>
 		<td>Press the Browse button and find the file you saved in step 5.</td>
 	</tr>
-	<tr class="sect3 secthdr">
+	<!--tr class="sect3 secthdr">
 		<td colspan=3><h3>Settings:</h3></td>
-	</tr>
+	</tr-->
 	<tr class="sect3">
 		<td>1.</td>
 		<td><img class=tn src="imgs/settings.step1.png" /></td>
@@ -277,9 +393,9 @@ Repeat for Members, Posts in Page?, Others???
 <br>Mindbody API Site Owner Password = Password above (see note as above)
 		</td>
 	</tr>
-        <tr class="sect4 secthdr">
+        <!--tr class="sect4 secthdr">
             <td colspan="3"><h3>Creating the "Course Catalog" page</h3></td>
-        </tr>
+        </tr-->
         <tr class="sect4">
             <td>
                 1.
@@ -299,9 +415,9 @@ The page content should be restricted only to the specific roles that need to be
             </td>
         </tr>
 
-        <tr class="sect5 secthdr">
+        <!--tr class="sect5 secthdr">
             <td colspan="3"><h3>How to create class pages</h3></td>
-        </tr>
+        </tr-->
         <tr class="sect5">
             <td>
                 1. Introduction
@@ -335,7 +451,7 @@ The next sections of this document go through the process of creating a new page
 Take note of the “ID” listed for the new class so that it can be used to associate to the corresponding WoddPress page in later steps.
                 </p>
             </td>
-	    <td class=col4></td>
+	    <!--td class=col4></td-->
         </tr>
         
         <tr class="sect5">
@@ -394,13 +510,13 @@ Embed tags for video 4 go here...
 Note that each embed link is surrounded by its own “div” tag inside the “panes” section.  Note also that the shortcode [pp-pca-mindbody-content-menu] provides the JavaScript necessary to display the menu and choose the videos or other content.
 </p>
             </td>
-	    <td class=col4></td>
+	    <!--td class=col4></td-->
         </tr>
 
-        <tr class="sect6 secthdr">
+        <!--tr class="sect6 secthdr">
             <td colspan="3"><h3>Shortcode reference Guide</h3></td>
-        </tr>
-        <tr class="sect6 secthdr">
+        </tr-->
+        <tr class="sect6">
             <td></td>
             <td></td>
             <td>
@@ -412,7 +528,7 @@ Note that each embed link is surrounded by its own “div” tag inside the “p
 
         
 </table>
-
+</div>
 
 
 
