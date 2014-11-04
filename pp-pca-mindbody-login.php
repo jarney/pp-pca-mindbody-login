@@ -267,32 +267,9 @@ class PPPCAMindbodyPlugin {
                     }
                 }
 
-		if ( current_user_can('edit_pages') ) {
-	                if (!isset($_SESSION["pp-pca-mindbody-login"])) {
-				$classList = $this->getAllClasses();
-
-				get_currentuserinfo();
-
-	                        $sessionData = new PPPCAMindBodyUserData(
-					$current_user->user_login,
-					$current_user->user_email,
-					"N/A",
-					"N/A",
-					$classList
-	                        );
-				$_SESSION["pp-pca-mindbody-login-admin"] = "true";
-	                        $_SESSION["pp-pca-mindbody-login"] = serialize($sessionData);
-			}
-		}
-		else {
-			if (isset($_SESSION["pp-pca-mindbody-login-admin"])) {
-                            unset($_SESSION["pp-pca-mindbody-login-admin"]);
-                            unset($_SESSION["pp-pca-mindbody-login"]);
-                        }
-	                if (!isset($_SESSION["pp-pca-mindbody-login"])) {
-        	            $template = plugin_dir_path(__FILE__) . 'pp-pca-mindbody-login-template.php';
-                	}
-		}
+                if (!isset($_SESSION["pp-pca-mindbody-login"])) {
+                    $template = plugin_dir_path(__FILE__) . 'pp-pca-mindbody-login-template.php';
+                }
             }
 	}
         return $template;
@@ -313,22 +290,25 @@ class PPPCAMindbodyPlugin {
         return $logoutLink;
     }
 
-    public function getAllClasses() {
-	$classService = $this->getClassService();
+    public function getClassList() {
+    }
 
-        $classDescriptionIDs = array();
-        $classIDs = array();
-        $staffIDs = array();
+    function shortcodeClassListAll($attrs) {
+            $classService = $this->getClassService();
 
-        $startDate = new DateTime();
-        $startDate->modify("-90 days");
+            $classDescriptionIDs = array();
+            $classIDs = array();
+            $staffIDs = array();
 
-        // Next 12 months.
-        $endDate = new DateTime();
-        $endDate->modify("+120 days");
+            $startDate = new DateTime();
+            $startDate->modify("-90 days");
 
-        $classService = $this->getClassService();
-        $getClassesResponse = $classService->GetClasses(
+            // Next 12 months.
+            $endDate = new DateTime();
+            $endDate->modify("+120 days");
+
+            $classService = $this->getClassService();
+            $getClassesResponse = $classService->GetClasses(
                 $classDescriptionIDs,
                 $classIDs,
                 $staffIDs,
@@ -337,17 +317,11 @@ class PPPCAMindbodyPlugin {
 		null
             );
 
-        $classList = array();
-        foreach ($getClassesResponse->GetClassesResult->Classes->Class as $myClass) {
-            array_push($classList, $myClass);
-        }
-
-        $classList = $this->uniqueClasses($classList);
-        return $classList;
-    }
-
-    function shortcodeClassListAll($attrs) {
-            $classList = $this->getAllClasses();
+            $classList = array();
+            foreach ($getClassesResponse->GetClassesResult->Classes->Class as $myClass) {
+                array_push($classList, $myClass);
+            }
+            $classList = $this->uniqueClasses($classList);
 
             $allPages = $this->getMindbodyPages();
 
@@ -427,24 +401,35 @@ class PPPCAMindbodyPlugin {
 
         $sessionData = unserialize($_SESSION["pp-pca-mindbody-login"]);
 
+        $content = "<table>";
+        $content = $content . "<tr>";
+        $content = $content . "<td>Class ID</td>";
+        $content = $content . "<td>Name</td>";
+        $content = $content . "<td>Description</td>";
+        $content = $content . "</tr>";
+
         $allPages = $this->getMindbodyPages();
 
         foreach( $sessionData->getClassList() as $class) {
+            $content = $content . "<tr>";
+            $content = $content . "<td>" . $class->ClassScheduleID . "</td>";
+
             $pagesForClass = $this->getPageForClass($allPages, $class->ClassScheduleID);
 
             if (sizeof($pagesForClass) == 0) {
-                $content = $content . "<h1>" . $class->ClassDescription->Name . "</h1>";
+                $content = $content . "<td>" . $class->ClassDescription->Name . "</td>";
             }
             else {
-                $content = $content . "<h1>";
+                $content = $content . "<td>";
                 foreach ($pagesForClass as $classPage) {
                     $content = $content . "<a href=\"" . $classPage->guid. "\">" . $classPage->post_title . "</a><br/>";
                 }
-                $content = $content . "</h1>";
+                $content = $content . "</td>";
             }
-            $content = $content . "<p>" . $class->ClassDescription->Description . "</p>";
-            $content = $content . "<br/>";
+            $content = $content . "<td>" . $class->ClassDescription->Description . "</td>";
+            $content = $content . "</tr>";
         }
+        $content = $content . "</table>";
 
         return $content;
     }
@@ -517,15 +502,8 @@ class PPPCAMindbodyPlugin {
         ), $attrs );
 
         $sessionData = unserialize($_SESSION["pp-pca-mindbody-login"]);
-
-	$canView = false;
-	if ( current_user_can('edit_pages') ) {
-		$canView = true;
-	}
-	if (!$canView) {
-	        $canView= $this->isInClass($sessionData, $classAttributes['id']);
-	}
-        if ($canView) {
+        $found = $this->isInClass($sessionData, $classAttributes['id']);
+        if ($found) {
             $data = $data . do_shortcode($content);
         }
         else {
